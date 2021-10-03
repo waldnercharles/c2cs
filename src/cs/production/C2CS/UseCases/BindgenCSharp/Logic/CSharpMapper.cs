@@ -140,8 +140,9 @@ namespace C2CS.UseCases.BindgenCSharp
         {
             _types = abstractSyntaxTree.Types.ToImmutableDictionary(x => x.Name);
 
-            var functionExterns = Functions(
-                abstractSyntaxTree.Functions);
+            var variables = Variables(abstractSyntaxTree.Variables);
+
+            var functions = Functions(abstractSyntaxTree.Functions);
 
             var recordsBuilder = ImmutableArray.CreateBuilder<CRecord>();
             foreach (var record in abstractSyntaxTree.Records)
@@ -181,7 +182,8 @@ namespace C2CS.UseCases.BindgenCSharp
             var constants = Constants(abstractSyntaxTree.Constants);
 
             var result = new CSharpAbstractSyntaxTree(
-                functionExterns,
+                variables,
+                functions,
                 functionPointers,
                 structs,
                 typedefs,
@@ -195,16 +197,44 @@ namespace C2CS.UseCases.BindgenCSharp
             return result;
         }
 
-        private ImmutableArray<CSharpFunction> Functions(
-            ImmutableArray<CFunction> clangFunctionExterns)
+        private ImmutableArray<CSharpVariable> Variables(ImmutableArray<CVariable> cVariables)
         {
-            var builder = ImmutableArray.CreateBuilder<CSharpFunction>(clangFunctionExterns.Length);
+            var builder = ImmutableArray.CreateBuilder<CSharpVariable>(cVariables.Length);
+
+            foreach (var cVariable in cVariables)
+            {
+                var variable = Variable(cVariable);
+                builder.Add(variable);
+            }
+
+            var result = builder.ToImmutable();
+            return result;
+        }
+
+        private CSharpVariable Variable(CVariable cVariable)
+        {
+            var name = cVariable.Name;
+            var originalCodeLocationComment = OriginalCodeLocationComment(cVariable);
+            var cType = CType(cVariable.Type);
+            var typeName = TypeName(cType);
+
+            var result = new CSharpVariable(
+                name,
+                originalCodeLocationComment,
+                typeName);
+
+            return result;
+        }
+
+        private ImmutableArray<CSharpFunction> Functions(ImmutableArray<CFunction> cFunctions)
+        {
+            var builder = ImmutableArray.CreateBuilder<CSharpFunction>(cFunctions.Length);
 
             // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
-            foreach (var clangFunctionExtern in clangFunctionExterns)
+            foreach (var cFunction in cFunctions)
             {
-                var functionExtern = Function(clangFunctionExtern);
-                builder.Add(functionExtern);
+                var function = Function(cFunction);
+                builder.Add(function);
             }
 
             var result = builder.ToImmutable();

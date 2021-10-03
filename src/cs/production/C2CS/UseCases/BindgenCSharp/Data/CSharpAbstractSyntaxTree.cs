@@ -7,7 +7,9 @@ namespace C2CS.UseCases.BindgenCSharp
 {
     public readonly struct CSharpAbstractSyntaxTree
     {
-        public readonly ImmutableArray<CSharpFunction> FunctionExterns;
+        public readonly ImmutableArray<CSharpVariable> Variables;
+
+        public readonly ImmutableArray<CSharpFunction> Functions;
 
         public readonly ImmutableArray<CSharpFunctionPointer> FunctionPointers;
 
@@ -24,7 +26,8 @@ namespace C2CS.UseCases.BindgenCSharp
         public readonly ImmutableArray<CSharpConstant> Constants;
 
         public CSharpAbstractSyntaxTree(
-            ImmutableArray<CSharpFunction> functionExterns,
+            ImmutableArray<CSharpVariable> variables,
+            ImmutableArray<CSharpFunction> functions,
             ImmutableArray<CSharpFunctionPointer> functionPointers,
             ImmutableArray<CSharpStruct> structs,
             ImmutableArray<CSharpTypedef> typedefs,
@@ -33,7 +36,8 @@ namespace C2CS.UseCases.BindgenCSharp
             ImmutableArray<CSharpPseudoEnum> pseudoEnums,
             ImmutableArray<CSharpConstant> constants)
         {
-            FunctionExterns = functionExterns;
+            Variables = variables;
+            Functions = functions;
             FunctionPointers = functionPointers;
             Structs = structs;
             Typedefs = typedefs;

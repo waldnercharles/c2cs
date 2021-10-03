@@ -30,7 +30,8 @@ namespace C2CS.UseCases.BindgenCSharp
 		{
 			var builder = ImmutableArray.CreateBuilder<MemberDeclarationSyntax>();
 
-			EmitFunctionExterns(builder, abstractSyntaxTree.FunctionExterns);
+			EmitVariables(builder, abstractSyntaxTree.Variables);
+			EmitFunctions(builder, abstractSyntaxTree.Functions);
 			EmitFunctionPointers(builder, abstractSyntaxTree.FunctionPointers);
 			EmitStructs(builder, abstractSyntaxTree.Structs);
 			EmitOpaqueDataTypes(builder, abstractSyntaxTree.OpaqueDataTypes);
@@ -77,6 +78,10 @@ using C2CS;
 public static unsafe partial class {className}
 {{
     private const string LibraryName = ""{libraryName}"";
+	private static IntPtr _address = NativeLibrary.Load(
+		LibraryName,
+		typeof({className}).Assembly,
+		DllImportSearchPath.UseDllDirectoryForDependencies);
 }}
 ";
 
@@ -93,15 +98,54 @@ public static unsafe partial class {className}
 			return newCompilationUnitFormatted;
 		}
 
-		private void EmitFunctionExterns(
+		private void EmitVariables(
 			ImmutableArray<MemberDeclarationSyntax>.Builder builder,
-			ImmutableArray<CSharpFunction> functionExterns)
+			ImmutableArray<CSharpVariable> variables)
 		{
-			foreach (var functionExtern in functionExterns)
+			foreach (var variable in variables)
+			{
+				var field = EmitVariableFieldAddress(variable);
+				builder.Add(field);
+
+				var property = EmitVariableProperty(variable);
+				builder.Add(property);
+			}
+		}
+
+		private FieldDeclarationSyntax EmitVariableFieldAddress(CSharpVariable variable)
+		{
+			var code = $@"
+{variable.CodeLocationComment}
+public static IntPtr _address_{variable.Name} = NativeLibrary.GetExport(_address, ""{variable.Name}"");
+";
+			var member = ParseMemberCode<FieldDeclarationSyntax>(code);
+			return member;
+		}
+
+		private MemberDeclarationSyntax EmitVariableProperty(CSharpVariable variable)
+		{
+			var code = $@"
+public static {variable.Type} {variable.Name}
+{{
+	get
+	{{
+		return Runtime.ReadMemory<{variable.Type}>(_address_{variable.Name});
+	}}
+}}
+";
+			var member = ParseMemberCode<PropertyDeclarationSyntax>(code);
+			return member;
+		}
+
+		private void EmitFunctions(
+			ImmutableArray<MemberDeclarationSyntax>.Builder builder,
+			ImmutableArray<CSharpFunction> functions)
+		{
+			foreach (var function in functions)
 			{
 				// https://github.com/lithiumtoast/c2cs/issues/15
 				var shouldIgnore = false;
-				foreach (var cSharpFunctionExternParameter in functionExtern.Parameters)
+				foreach (var cSharpFunctionExternParameter in function.Parameters)
 				{
 					if (cSharpFunctionExternParameter.Type.Name == "va_list")
 					{
@@ -115,12 +159,12 @@ public static unsafe partial class {className}
 					continue;
 				}
 
-				var member = EmitFunctionExtern(functionExtern);
+				var member = EmitFunction(function);
 				builder.Add(member);
 			}
 		}
 
-		private MethodDeclarationSyntax EmitFunctionExtern(CSharpFunction function)
+		private MethodDeclarationSyntax EmitFunction(CSharpFunction function)
 		{
 			var parameterStrings = function.Parameters.Select(
 				x => $@"{x.Type.Name} {x.Name}");
