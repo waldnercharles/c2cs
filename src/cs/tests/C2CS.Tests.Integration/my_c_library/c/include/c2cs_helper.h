@@ -1,3 +1,6 @@
+#pragma once
+#include <stddef.h>
+
 #if defined(_WIN32) && defined(__GNUC__)
     #if defined(__x86_64__) || defined(_M_AMD64) || defined(_M_X64)
         #define C2CS_RUNTIME_TARGET_PLATFORM_NAME "x86_64-pc-windows-gnu"

@@ -3,7 +3,9 @@
 #include <stdint.h>
 #include "c2cs_helper.h"
 
-typedef enum enum_force_uint32 {
+#include "c2cs_recursive_exclude_parent.h"
+
+typedef enum enum_force_uint32 : unsigned int {
     ENUM_FORCE_UINT32_DAY_UNKNOWN,
     ENUM_FORCE_UINT32_DAY_MONDAY,
     ENUM_FORCE_UINT32_DAY_TUESDAY,

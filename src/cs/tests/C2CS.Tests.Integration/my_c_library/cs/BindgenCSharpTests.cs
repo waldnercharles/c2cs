@@ -97,4 +97,11 @@ public class BindgenCSharpTests : IntegrationTest
         Assert.True(value!.BaseList!.Types[0].Type.ToString() == "int");
         Assert.True(value.Members.Count > 0);
     }
+
+    [Fact]
+    public void exclude_recursive_headers()
+    {
+        Assert.False(_fixture.FunctionsByName.TryGetValue("function_void_void_excluded_parent", out _));
+        Assert.False(_fixture.FunctionsByName.TryGetValue("function_void_void_excluded_child", out _));
+    }
 }
